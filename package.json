@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "start": "bun cli.ts",
-    "build": "bun build ./cli.ts --outdir ./dist",
+    "start": "bun src/cli.ts",
+    "build": "bun build ./src/cli.ts --outdir ./dist",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

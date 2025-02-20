@@ -18,11 +18,14 @@ The simulation is managed by a Narrator (an O1 instance) that coordinates with a
 # Install dependencies
 bun install
 
-# Run simulation with new output directory
-bun start --output ./simulation
+# Run simulation with default output directory (./simulation)
+bun start
+
+# Run simulation with different output directory
+bun start --output <output-directory>
 
 # Continue simulation from previous snapshot
-bun start --output ./simulation --snapshot ./simulation/snapshot-2024-01-01.md
+bun start --snapshot <snapshot-file>
 ```
 
 ## Ground Truth Data

@@ -9,11 +9,26 @@ import { mkdir } from 'fs/promises';
 async function loadSnapshot(path: string): Promise<SimulationSnapshot | null> {
   try {
     const content = await Bun.file(path).text();
-    return JSON.parse(content);
+    if (path.endsWith('.json')) {
+      return JSON.parse(content);
+    }
+    return { notes: content };
   } catch (err) {
     debug('Error loading snapshot:', err);
     return null;
   }
+}
+
+function formatSnapshot(snapshot: SimulationSnapshot): string {
+  if (typeof snapshot === 'string') {
+    return snapshot;
+  }
+  if (typeof snapshot.notes === 'string') {
+    return snapshot.notes;
+  }
+  return Object.entries(snapshot)
+    .map(([key, value]) => `${key}:\n${JSON.stringify(value, null, 2)}`)
+    .join('\n\n');
 }
 
 async function ensureDirectoryExists(dir: string) {
@@ -32,12 +47,8 @@ async function main() {
   const snapshotIndex = args.indexOf('--snapshot');
   let snapshotPath = null;
   
-  if (outputDirIndex === -1) {
-    error('Error: --output directory must be specified');
-    process.exit(1);
-  }
-  
-  const outputDir = args[outputDirIndex + 1];
+  // Default output directory is "simulation" if not specified
+  const outputDir = outputDirIndex !== -1 ? args[outputDirIndex + 1] : 'simulation';
   if (snapshotIndex !== -1) {
     snapshotPath = args[snapshotIndex + 1];
   }
@@ -63,8 +74,8 @@ async function main() {
       progress('Initial Analysis', 'Generating current world state');
       currentSnapshot = await narrator.generateInitialSnapshot(groundTruth);
       const initialDate = new Date().toISOString().split('T')[0];
-      const initialSnapshotPath = join(outputDir, `snapshot-${initialDate}-initial.json`);
-      await writeFile(initialSnapshotPath, JSON.stringify(currentSnapshot, null, 2));
+      const initialSnapshotPath = join(outputDir, `snapshot-${initialDate}-initial.txt`);
+      await writeFile(initialSnapshotPath, formatSnapshot(currentSnapshot));
       info(`Initial snapshot written to: ${initialSnapshotPath}`);
     }
     
@@ -74,10 +85,10 @@ async function main() {
     const dateStr = date.toISOString().split('T')[0];
     
     progress('Output', 'Writing simulation results');
-    const outputSnapshotPath = join(outputDir, `snapshot-${dateStr}.json`);
+    const outputSnapshotPath = join(outputDir, `snapshot-${dateStr}.txt`);
     const reportPath = join(outputDir, `report-${dateStr}.md`);
     
-    await writeFile(outputSnapshotPath, JSON.stringify(newSnapshot, null, 2));
+    await writeFile(outputSnapshotPath, formatSnapshot(newSnapshot));
     await writeFile(reportPath, typeof report === 'string' ? report : JSON.stringify(report, null, 2));
     
     info(`Snapshot written to: ${outputSnapshotPath}`);
